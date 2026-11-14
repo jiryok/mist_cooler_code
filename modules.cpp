@@ -1,7 +1,6 @@
 /*
 wating
 
-
 */
 #include"modules.h"
 float dew_point;
@@ -10,8 +9,11 @@ float humidity;
 bool enableHeater = false;
 uint8_t loopCnt = 0;
 bool pump_on;
-
-
+bool pump_rest = false;
+int pump_run_time_ms = 0;
+int pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
+int pump_max_run_time_ms = PumpOnTime_min * 60 * 1000; 
+int pump_cumurative_running_time;
 
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
@@ -72,7 +74,10 @@ void sht31_reading_loop() {
     loopCnt = 0;
   }
   loopCnt++;
+  dew_point = calculate_dew_point(temperature, humidity);
 }
+
+
 
 void pump_state_defier() {
   bool motion_allow = 0;
@@ -86,13 +91,28 @@ void pump_state_defier() {
   }
 
   if (temperature_sensor){
-    if (!((dew_point < 16) && (dew_point > 7))) 
+    if (using_dewpoint)
     {
-      temperature_allow = 1;
-    } 
-    else 
+      if (!((dew_point < 16) && (dew_point > 7))) 
+      {
+        temperature_allow = 1;
+      } 
+      else 
+      {
+        temperature_allow = 0;
+      }
+    }
+    else
     {
-      temperature_allow = 0;
+      if (temperature > 25)
+      {
+        temperature_allow = 1;
+      }
+      else
+      {
+        temperature_allow = 0;
+      }
+      
     }
   } 
   else 
@@ -102,10 +122,42 @@ void pump_state_defier() {
   pump_on = temperature_allow && motion_allow;
 }
 
+void pump_safety()
+{
+  if (pump_rest)
+  {
+    pump_rest_time_ms -= delay_ms;
+    pump_on = false;
+    if (pump_rest_time_ms <= 0)
+    {
+      pump_rest = false;
+      pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
+    }
+    return;
+  }
+  else if (pump_on)
+  {
+    pump_run_time_ms += delay_ms;
+    if (pump_run_time_ms >= pump_max_run_time_ms)
+    {
+      pump_rest = 1;
+    }
+    return;
+  }
+  else
+  {
+    pump_rest_time_ms -= delay_ms;
+  }
+  
+  
+}
+
 void pump_work() 
 {
+   
   if (pump_on)
   {
+    
     digitalWrite(pump_relay, HIGH);
     Serial.println("PUMP ON");
   }

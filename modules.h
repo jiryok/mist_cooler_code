@@ -3,8 +3,11 @@
 //set up the code and pins
 inline bool motion_sensor = false;
 inline bool temperature_sensor = true;
-#define delay_ms 1000
-
+inline bool using_dewpoint = true;
+inline bool enable_pump_safety = true;
+const int delay_ms = 1000;
+const int PumpOnTime_min = 15;
+const int PumpRestTime_min = 5;
 #define motion_pin 26
 #define pump_relay 27
 
@@ -32,5 +35,5 @@ int pir_status();
 //pump
 void pump_state_defier();
 void pump_work();
-
+void pump_safety();
 #endif
