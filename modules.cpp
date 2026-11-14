@@ -1,6 +1,9 @@
 /*
-wating
-
+ todo :
+ add feature to prevent on-off of switch rapidly when the value is near the threashold
+ use millis?
+ use water level sensor
+ define trigger range Dew point vs temp
 */
 #include"modules.h"
 float dew_point;
@@ -10,18 +13,18 @@ bool enableHeater = false;
 uint8_t loopCnt = 0;
 bool pump_on;
 bool pump_rest = false;
-int pump_run_time_ms = 0;
-int pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
-int pump_max_run_time_ms = PumpOnTime_min * 60 * 1000; 
-int pump_cumurative_running_time;
+unsigned long pump_run_time_ms = 0;
+unsigned long pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
+unsigned long pump_max_run_time_ms = PumpOnTime_min * 60 * 1000; 
 
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
 void pin_initialize() {
   Serial.begin(115200);
-  while (!Serial)
-    delay(10);     // will pause Zero, Leonardo, etc until serial console opens
+  //while (!Serial)
+  //  delay(10);     // will pause Zero, Leonardo, etc until serial console opens
   pinMode(motion_pin, INPUT);
+  digitalWrite(pump_relay, LOW);
   pinMode(pump_relay, OUTPUT);
 }
 
@@ -62,18 +65,21 @@ void sht31_reading_loop() {
 
   // Toggle heater enabled state every 30 seconds
   // An ~3.0 degC temperature increase can be noted when heater is enabled
-  if (loopCnt >= 30) {
-    enableHeater = !enableHeater;
-    sht31.heater(enableHeater);
-    Serial.print("Heater Enabled State: ");
-    if (sht31.isHeaterEnabled())
-      Serial.println("ENABLED");
-    else
-      Serial.println("DISABLED");
+  if (using_sht_heater)
+  {
+    if (loopCnt >= 30) {
+      enableHeater = !enableHeater;
+      sht31.heater(enableHeater);
+      Serial.print("Heater Enabled State: ");
+      if (sht31.isHeaterEnabled())
+        Serial.println("ENABLED");
+      else
+        Serial.println("DISABLED");
 
-    loopCnt = 0;
+      loopCnt = 0;
+    }
+    loopCnt++;
   }
-  loopCnt++;
   dew_point = calculate_dew_point(temperature, humidity);
 }
 
@@ -124,32 +130,35 @@ void pump_state_defier() {
 
 void pump_safety()
 {
-  if (pump_rest)
+  if (enable_pump_safety)
   {
-    pump_rest_time_ms -= delay_ms;
-    pump_on = false;
-    if (pump_rest_time_ms <= 0)
+    if (pump_rest)
     {
-      pump_rest = false;
-      pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
+      pump_rest_time_ms -= delay_ms;
+      pump_on = false;
+      if (pump_rest_time_ms <= 0)
+      {
+        pump_rest = false;
+        pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
+      }
+      return;
     }
-    return;
-  }
-  else if (pump_on)
-  {
-    pump_run_time_ms += delay_ms;
-    if (pump_run_time_ms >= pump_max_run_time_ms)
+    else if (pump_on)
     {
-      pump_rest = 1;
+      pump_run_time_ms += delay_ms;
+      if (pump_run_time_ms >= pump_max_run_time_ms)
+      {
+        pump_rest = 1;
+        pump_run_time_ms = 0;
+      }
+      return;
     }
-    return;
+    else
+    {
+      pump_rest_time_ms -= delay_ms;
+    }
+    
   }
-  else
-  {
-    pump_rest_time_ms -= delay_ms;
-  }
-  
-  
 }
 
 void pump_work() 
@@ -170,7 +179,7 @@ void pump_work()
 
 float calculate_dew_point(float temp, float humi)
 {
-  if (humidity <= 0 || humidity > 100) 
+  if (humi <= 0 || humi > 100) 
   {
    return NAN;
   }

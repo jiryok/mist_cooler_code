@@ -9,3 +9,5 @@ close the pump when it is up for a long time yet.
 
 the code work by connect the relay which connect to the pump that pump the water to the mist
 spreader. Motion sensor and temperature is option but if select true you should connect the sensor to the MCU.
+
+please note that the pump must connect to NC of relay
