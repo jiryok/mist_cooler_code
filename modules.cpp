@@ -80,15 +80,11 @@ void sht31_reading_loop() {
     loopCnt++;
   }
   dew_point = calculate_dew_point(temperature, humidity);
+
+  Serial.printf("dew point : ");
+  Serial.println(dew_point);
 }
 
-void collect_data_to_sheet() 
-{
-  if (collect_data_in_sheet)
-  {
-    /* */
-  }
-}
 
 void pump_state_defier() {
   bool motion_allow = 0;
@@ -211,7 +207,11 @@ bool isWiFiConnected() {
 }
 unsigned long last_sheet_send_time = 0;
 
-bool sendToGoogleSheets(float temperature, float humidity) {
+bool sendToGoogleSheets(float temperature, float humidity, float dew) {
+
+  if (!collect_data_in_sheet) {
+    return false;
+  }
   // ตรวจสอบรอบเวลาส่งข้อมูล (แปลง sheet_sending_interval_s เป็น ms)
   if (millis() - last_sheet_send_time < (sheet_sending_interval_s * 1000UL)) {
     return false;
@@ -257,6 +257,6 @@ bool sendToGoogleSheets(float temperature, float humidity) {
   } else {
     Serial.println("Unable to connect to Google Script URL.");
   }
-
+  
   return success;
 }
