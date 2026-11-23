@@ -7,14 +7,13 @@
 float temperature;
 float humidity;
 float dew_point;
-bool enableHeater = false;
+bool enableHeater = false; 
 uint8_t loopCnt = 0;
 bool pump_on;
 bool pump_rest = false;
 unsigned long pump_run_time_ms = 0;
 long pump_rest_time_ms = PumpRestTime_min * 60 * 1000; 
 unsigned long pump_max_run_time_ms = PumpOnTime_min * 60 * 1000;  
-float cmt_sending_time = 0;
 
 Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
@@ -90,6 +89,12 @@ void pump_state_defier() {
   bool motion_allow = 0;
   bool temperature_allow = 0;
 
+  if ((temperature_sensor && (temperature > standby_temp)) && allow_standby_temp)
+  {
+    pump_on = 1;
+    return;
+  }
+
   if (motion_sensor){
     int a = pir_status();
     motion_allow = a;
@@ -108,7 +113,18 @@ void pump_state_defier() {
       temperature_allow = 0;
     }
   } 
-  else 
+  else if (temperature_sensor)
+  {
+    if (temperature > set_temp)
+    {
+      temperature_allow = 1;
+    } 
+    else 
+    {
+      temperature_allow = 0;
+    }
+  }
+  else
   {
     temperature_allow = 1;
   }
@@ -180,27 +196,31 @@ int pir_status() {
 
 //#wifi
 void connectToWiFi() {
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(wifi_name);
+  if (collect_data_in_sheet)
+  {
+    Serial.print("Connecting to WiFi: ");
+    Serial.println(wifi_name);
 
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(wifi_name, WPA2_AUTH_PEAP, eap_iden, wifi_user_name, wifi_password);
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(wifi_name, WPA2_AUTH_PEAP, eap_iden, wifi_user_name, wifi_password);
 
-  unsigned long startAttempt = millis();
-  while (WiFi.status() != WL_CONNECTED &&
-         millis() - startAttempt < WIFI_CONNECT_TIMEOUT_MS) {
-    delay(300);
-    Serial.print(".");
+    unsigned long startAttempt = millis();
+    while (WiFi.status() != WL_CONNECTED &&
+          millis() - startAttempt < WIFI_CONNECT_TIMEOUT_MS) {
+      delay(300);
+      Serial.print(".");
+    }
+    Serial.println();
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.print("WiFi connected. IP address: ");
+      Serial.println(WiFi.localIP());
+    } else {
+      Serial.println("WiFi connection failed (will retry on next cycle).");
+    }
   }
-  Serial.println();
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("WiFi connected. IP address: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("WiFi connection failed (will retry on next cycle).");
-  }
+  
 }
 bool isWiFiConnected() {
   return WiFi.status() == WL_CONNECTED;
@@ -234,7 +254,8 @@ bool sendToGoogleSheets(float temperature, float humidity, float dew) {
 
   String url = String(sheet_link) +
                "?temperature=" + String(temperature, 2) +
-               "&humidity=" + String(humidity, 2);
+               "&humidity=" + String(humidity, 2) + 
+               "&dew_point=" + String(dew, 2);
 
   bool success = false;
 
