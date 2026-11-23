@@ -1,9 +1,10 @@
-#include"modules.h"
-
+#include "modules.h"
 
 void setup() {
   pin_initialize();
-  connectToWiFi();
+  if (collect_data_in_sheet) { // Fixed: Only connect at boot if sheet logging is enabled
+    connectToWiFi();
+  }
   sht31_setup();
 }
 
