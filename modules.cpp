@@ -45,18 +45,6 @@ void sht31_setup() {
 void sht31_reading_loop() {
   temperature = sht31.readTemperature();
   humidity = sht31.readHumidity();
-  Serial.println("SHT31 result");
-  if (! isnan(temperature)) {  // check if 'is not a number'
-    Serial.print("Temp *C = "); Serial.print(temperature); Serial.print("\t\t");
-  } else {
-    Serial.println("Failed to read temperature");
-  }
- 
-  if (! isnan(humidity)) {  // check if 'is not a number'
-    Serial.print("Hum. % = "); Serial.println(humidity);
-  } else {
-    Serial.println("Failed to read humidity");
-  }
 
   // Toggle heater enabled state every 30 seconds
   // An ~3.0 degC temperature increase can be noted when heater is enabled
@@ -65,19 +53,11 @@ void sht31_reading_loop() {
     if (loopCnt >= 30) {
       enableHeater = !enableHeater;
       sht31.heater(enableHeater);
-      Serial.print("Heater Enabled State: ");
-      if (sht31.isHeaterEnabled())
-        Serial.println("ENABLED");
-      else
-        Serial.println("DISABLED");
-
       loopCnt = 0;
     }
     loopCnt++;
   }
   dew_point = calculate_dew_point(temperature, humidity);
-  Serial.printf("dew point : ");
-  Serial.println(dew_point);
 }
 
 void pump_state_defier() {
@@ -191,12 +171,10 @@ void pump_work()
   if (pump_on)
   {
     digitalWrite(pump_relay, HIGH);
-    Serial.println("PUMP ON");
   }
   else
   {
     digitalWrite(pump_relay, LOW);
-    Serial.println("PUMP OFF");
   }
 }
 
@@ -228,7 +206,6 @@ void connectToWiFi() {
   else {
     WiFi.begin(wifi_name, wifi_password);
   }
-  
 
   unsigned long startAttempt = millis();
   while (WiFi.status() != WL_CONNECTED &&
@@ -309,6 +286,52 @@ bool sendToGoogleSheets(float temperature, float humidity, float dew) {
   } else {
     Serial.println("Unable to connect to Google Script URL.");
   }
- 
+
   return success;
+}
+
+// =========================================================================
+// ฟังก์ชันใหม่สำหรับจัดการข้อมูล Serial Monitor ทั้งหมดในลูปการทำงาน
+// =========================================================================
+void print_system_status() {
+  Serial.println("\n--- SYSTEM STATUS ---");
+  
+  // 1. ข้อมูลจากเซนเซอร์ SHT31
+  if (!isnan(temperature)) {
+    Serial.printf("Temp *C = %.2f\t", temperature);
+  } else {
+    Serial.print("Temp *C = NAN\t");
+  }
+  
+  if (!isnan(humidity)) {
+    Serial.printf("Hum. %% = %.2f\t", humidity);
+  } else {
+    Serial.print("Hum. %% = NAN\t");
+  }
+
+  if (!isnan(dew_point)) {
+    Serial.printf("Dew Point = %.2f\n", dew_point);
+  } else {
+    Serial.println("Dew Point = NAN");
+  }
+
+  // 2. สถานะ Heater ในตัวเซนเซอร์ SHT31 (แสดงผลเมื่อมีการเปลี่ยนแปลงหรือตามรอบ)
+  if (using_sht_heater) {
+    Serial.printf("SHT Heater State: %s\n", sht31.isHeaterEnabled() ? "ENABLED" : "DISABLED");
+  }
+
+  // 3. สถานะการทำงานของปั๊มน้ำ
+  Serial.printf("Pump Output: %s\n", pump_on ? "ON (SPRAYING)" : "OFF");
+  
+  // 4. ข้อมูลและสถานะการตรวจสอบความปลอดภัยของปั๊ม (Pump Safety Debug)
+  if (enable_pump_safety) {
+    if (pump_rest) {
+      Serial.printf("[SAFETY] Pump is RESTING. Remaining rest time: %ld s\n", pump_rest_time_ms / 1000);
+    } else {
+      Serial.printf("[SAFETY] Accumulated Run Time: %.1f / %.1f s\n", 
+                    (float)pump_run_time_ms / 1000.0, 
+                    (float)pump_max_run_time_ms / 1000.0);
+    }
+  }
+  Serial.println("--------------------");
 }
