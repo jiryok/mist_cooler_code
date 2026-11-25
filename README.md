@@ -3,7 +3,7 @@
 hardware in use : ESP32
 
 this code the design for adaptive mist cooler project that turn on/off 
-relay module according to dew point of the temperature sensor.
+relay module according to dew point of the t  emperature sensor.
 
 before compiling the code please change the setting in the module.h 
 plese note that when select false in sensor setting the machine is allow

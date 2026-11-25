@@ -4,10 +4,10 @@
 // set up the code and pins
 inline bool motion_sensor = true;
 inline bool temperature_sensor = true;
-inline bool using_dewpoint = true;
+inline bool using_dewpoint = false;
 inline bool enable_pump_safety = true;
 inline bool using_sht_heater = false;
-inline bool collect_data_in_sheet = true;
+inline bool collect_data_in_sheet = false;
 inline bool allow_standby_temp = false;
 inline bool using_enterprise_wifi = false;
 
@@ -18,12 +18,13 @@ const int PumpRestTime_min = 5;
 const float sheet_sending_interval_s = 10;
 
 const float standby_temp = 26.0;
-const float set_temp = 24.0;
+const float set_temp = 36.0;
 const float set_dew = 17.0;
-// ending setup part
+// ending setup part 
 
 #define motion_pin 26
-#define pump_relay 27
+#define pump_relay 25
+
 #define SERIAL_BAUD_RATE 115200
 
 // sht31 & esp32 libs

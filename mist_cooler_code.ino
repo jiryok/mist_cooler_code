@@ -6,6 +6,7 @@ void setup() {
     connectToWiFi();
   }
   sht31_setup();
+  
 }
 
 void loop() {

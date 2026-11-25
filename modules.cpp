@@ -293,10 +293,12 @@ bool sendToGoogleSheets(float temperature, float humidity, float dew) {
 // =========================================================================
 // ฟังก์ชันใหม่สำหรับจัดการข้อมูล Serial Monitor ทั้งหมดในลูปการทำงาน
 // =========================================================================
+unsigned long time_stamp;
 void print_system_status() {
-  Serial.println("\n--- SYSTEM STATUS ---");
-  
+  time_stamp = millis();
+  Serial.print(time_stamp);
   // 1. ข้อมูลจากเซนเซอร์ SHT31
+  Serial.printf("%d ", time_stamp);
   if (!isnan(temperature)) {
     Serial.printf("Temp *C = %.2f\t", temperature);
   } else {
@@ -308,7 +310,6 @@ void print_system_status() {
   } else {
     Serial.print("Hum. %% = NAN\t");
   }
-
   if (!isnan(dew_point)) {
     Serial.printf("Dew Point = %.2f\n", dew_point);
   } else {
