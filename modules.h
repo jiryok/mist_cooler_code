@@ -6,9 +6,10 @@ inline bool motion_sensor = false;
 inline bool temperature_sensor = true;
 inline bool using_dewpoint = true;
 inline bool enable_pump_safety = true;
-inline bool using_sht_heater = false;
+inline bool using_sht_heater = true;
 inline bool collect_data_in_sheet = false;
 inline bool allow_standby_temp = false;
+inline bool using_enterprise_wifi = false;
 
 const int delay_ms = 1000;
 const int PumpOnTime_min = 15;

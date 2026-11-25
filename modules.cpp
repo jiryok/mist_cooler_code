@@ -221,7 +221,14 @@ void connectToWiFi() {
 
   WiFi.disconnect(true);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(wifi_name, WPA2_AUTH_PEAP, eap_iden, wifi_user_name, wifi_password);
+  if (using_enterprise_wifi)
+  {
+    WiFi.begin(wifi_name, WPA2_AUTH_PEAP, eap_iden, wifi_user_name, wifi_password);
+  }
+  else {
+    WiFi.begin(wifi_name, wifi_password);
+  }
+  
 
   unsigned long startAttempt = millis();
   while (WiFi.status() != WL_CONNECTED &&
